@@ -88,6 +88,22 @@ def find_GS(N, sigma, step_length, initial_temperature, cooling_rate):
     E = 0
     energy = []
     
+    # Let it approach equilibrium
+    T = initial_temperature
+    for k in range(N):
+        for i in range(N):
+            trial_coordinates = trial_move(coordinates, 20 * step_length, i)
+            Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
+            if accept_move(Delta_E, T):
+                coordinates = trial_coordinates.copy()
+    for k in range(N):
+        for i in range(N):
+            trial_coordinates = trial_move(coordinates, 4 * step_length, i)
+            Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
+            if accept_move(Delta_E, T):
+                coordinates = trial_coordinates.copy()
+
+    # Cool it down
     while moving:
         moving = False
         T = temperature(initial_temperature, cooling_rate, iteration)
@@ -116,15 +132,23 @@ def plot_GS(coordinates, N, sigma):
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.tick_params(direction='in')
-    plt.grid(True)
+    plt.grid(False)
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
     
-N = 168
+import time
+
+N = 100
 sigma = (2 ** (1 / 3)) * (3 ** (- 1 / 4)) * (N ** ( - 0.5))
-step_length = sigma
-initial_temperature = 0.05
-cooling_rate = 0.01
+step_length = 0.04 * sigma
+initial_temperature = 30
+cooling_rate = 0.02
+
+time1 = time.time()
 coordinates, energy = find_GS(N, sigma, step_length, initial_temperature, cooling_rate)
+time2 = time.time()
+
+print("elapsed time = ", time2 - time1)
+    
 plot_GS(coordinates, N, sigma)
-plt.plot(energy[300:])
+plt.plot(energy)
