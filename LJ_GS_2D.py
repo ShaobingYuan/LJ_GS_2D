@@ -90,13 +90,13 @@ def find_GS(N, sigma, step_length, initial_temperature, cooling_rate):
     
     # Let it approach equilibrium
     T = initial_temperature
-    for k in range(2*N):
+    for k in range(5*N):
         for i in range(N):
             trial_coordinates = trial_move(coordinates, 20 * step_length, i)
             Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
             if accept_move(Delta_E, T):
                 coordinates = trial_coordinates.copy()
-    for k in range(2*N):
+    for k in range(5*N):
         for i in range(N):
             trial_coordinates = trial_move(coordinates, 4 * step_length, i)
             Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
@@ -124,24 +124,40 @@ def plot_GS(coordinates, N, sigma):
     # Create the plot
     plt.figure(figsize=(6, 6))  # Set the figure size to visualize the square region
     plt.axis("equal")  # Equal aspect ratio
-    plt.xlim(0, 1)  # Set the limits of the x-axis to match the square region
-    plt.ylim(0, 1)  # Set the limits of the y-axis to match the square region
-    plt.scatter(coordinates[:, 0], coordinates[:, 1])
+    plt.xlim(-0.2, 1.2)  # Set the limits of the x-axis to match the square region
+    plt.ylim(-0.2, 1.2)  # Set the limits of the y-axis to match the square region
+    
+    x, y = coordinates[:, 0], coordinates[:, 1]
+    plt.scatter(x, y, zorder=2)
+    
+    periodic_displacement_1 = np.array([[-1, 0], [0, -1], [-1, 1], [-1, -1]])
+    periodic_displacement_2 = np.array([[1, 0], [0, 1], [1, 1], [1, -1]])
+    
+    for dx, dy in periodic_displacement_1:
+        plt.scatter(x + dx, y + dy, color='red', alpha=0.5, zorder=1)
+    
+    for dx, dy in periodic_displacement_2:
+        plt.scatter(x + dx, y + dy, color='red', alpha=0.5, zorder=3)
 
-    plt.title(f'Ground State Configuration with {N} particles, sigma = {sigma:.2f}')
+    plt.title(f'Ground State Configuration with {N} particles, sigma = {sigma:.2g}')
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.tick_params(direction='in')
-    plt.grid(False)
+    
+    plt.axhline(0, color='grey', linestyle='--', lw=1)
+    plt.axhline(1, color='grey', linestyle='--', lw=1)
+    plt.axvline(0, color='grey', linestyle='--', lw=1)
+    plt.axvline(1, color='grey', linestyle='--', lw=1)
+    
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
     
 import time
 
-N = 400
+N = 100
 sigma = (2 ** (1 / 3)) * (3 ** (- 1 / 4)) * (N ** ( - 0.5))
-step_length = 0.04 * sigma
-initial_temperature = 30
+step_length = 0.03 * sigma
+initial_temperature = 0.4
 cooling_rate = 0.02
 
 time1 = time.time()
