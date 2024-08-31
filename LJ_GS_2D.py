@@ -76,7 +76,7 @@ def temperature(initial_temperature, cooling_rate, iteration):
     current_temperature = initial_temperature - iteration * temperature_decrement
     
     # Ensure the temperature doesn't fall below a minimum threshold (e.g., a small positive value)
-    current_temperature = max(current_temperature, 0.01 * temperature_decrement)  # Adjust this minimum threshold as needed
+    current_temperature = max(current_temperature, 0.0001 * temperature_decrement)  # Adjust this minimum threshold as needed
     
     return current_temperature
 
@@ -90,13 +90,13 @@ def find_GS(N, sigma, step_length, initial_temperature, cooling_rate):
     
     # Let it approach equilibrium
     T = initial_temperature
-    for k in range(N):
+    for k in range(2*N):
         for i in range(N):
             trial_coordinates = trial_move(coordinates, 20 * step_length, i)
             Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
             if accept_move(Delta_E, T):
                 coordinates = trial_coordinates.copy()
-    for k in range(N):
+    for k in range(2*N):
         for i in range(N):
             trial_coordinates = trial_move(coordinates, 4 * step_length, i)
             Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
@@ -138,7 +138,7 @@ def plot_GS(coordinates, N, sigma):
     
 import time
 
-N = 100
+N = 400
 sigma = (2 ** (1 / 3)) * (3 ** (- 1 / 4)) * (N ** ( - 0.5))
 step_length = 0.04 * sigma
 initial_temperature = 30
