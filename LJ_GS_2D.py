@@ -69,14 +69,8 @@ def accept_move(Delta_E, T):
     
 @njit
 def temperature(initial_temperature, cooling_rate, iteration):
-    # Determine the current step's temperature decrement
-    temperature_decrement = cooling_rate * initial_temperature  # Decrease by cooling rate times initial temperature
     
-    # Calculate the current temperature based on the step number and decrement
-    current_temperature = initial_temperature - iteration * temperature_decrement
-    
-    # Ensure the temperature doesn't fall below a minimum threshold (e.g., a small positive value)
-    current_temperature = max(current_temperature, 0.0001 * temperature_decrement)  # Adjust this minimum threshold as needed
+    current_temperature = initial_temperature * ((1 - cooling_rate) ** iteration)
     
     return current_temperature
 
@@ -87,16 +81,23 @@ def find_GS(N, sigma, step_length, initial_temperature, cooling_rate):
     iteration = 0  # Iteration number
     E = 0
     energy = []
+    temp = []
     
     # Let it approach equilibrium
     T = initial_temperature
-    for k in range(5*N):
+    for k in range(15*N):
         for i in range(N):
-            trial_coordinates = trial_move(coordinates, 20 * step_length, i)
+            trial_coordinates = trial_move(coordinates, sigma, i)
             Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
             if accept_move(Delta_E, T):
                 coordinates = trial_coordinates.copy()
-    for k in range(5*N):
+    for k in range(15*N):
+        for i in range(N):
+            trial_coordinates = trial_move(coordinates, 10 * step_length, i)
+            Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
+            if accept_move(Delta_E, T):
+                coordinates = trial_coordinates.copy()
+    for k in range(15*N):
         for i in range(N):
             trial_coordinates = trial_move(coordinates, 4 * step_length, i)
             Delta_E = energy_change(N, sigma, coordinates, trial_coordinates, i)
@@ -116,9 +117,10 @@ def find_GS(N, sigma, step_length, initial_temperature, cooling_rate):
                     E += Delta_E
                     moving = True
                 energy.append(E)
+                temp.append(T)
         iteration += 1
     
-    return coordinates, energy
+    return coordinates, energy, temp
 
 def plot_GS(coordinates, N, sigma):
     # Create the plot
@@ -128,16 +130,16 @@ def plot_GS(coordinates, N, sigma):
     plt.ylim(-0.2, 1.2)  # Set the limits of the y-axis to match the square region
     
     x, y = coordinates[:, 0], coordinates[:, 1]
-    plt.scatter(x, y, zorder=2)
+    plt.scatter(x, y, zorder=2, s=10)
     
     periodic_displacement_1 = np.array([[-1, 0], [0, -1], [-1, 1], [-1, -1]])
     periodic_displacement_2 = np.array([[1, 0], [0, 1], [1, 1], [1, -1]])
     
     for dx, dy in periodic_displacement_1:
-        plt.scatter(x + dx, y + dy, color='red', alpha=0.5, zorder=1)
+        plt.scatter(x + dx, y + dy, color='red', alpha=0.5, zorder=1, s=10)
     
     for dx, dy in periodic_displacement_2:
-        plt.scatter(x + dx, y + dy, color='red', alpha=0.5, zorder=3)
+        plt.scatter(x + dx, y + dy, color='red', alpha=0.5, zorder=3, s=10)
 
     plt.title(f'Ground State Configuration with {N} particles, sigma = {sigma:.2g}')
     plt.xlabel('X Coordinate')
@@ -150,21 +152,57 @@ def plot_GS(coordinates, N, sigma):
     plt.axvline(1, color='grey', linestyle='--', lw=1)
     
     plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig(f"GS_{N}_{sigma:.2g}.pdf", dpi=600)
     plt.show()
+    
+def plot_energy_change(energy, temp):
+    fig, ax1 = plt.subplots()
+    
+    # Plot energy change
+    ax1.plot(energy, 'b-', label='Relative Energy Change')
+    ax1.set_xlabel('Time')
+    ax1.set_ylabel('Relative Energy Change')
+    ax1.tick_params(direction='in')
+
+    
+    # Plot temperature
+    ax2 = ax1.twinx()
+    ax2.plot(temp, 'r-', label='Temperature')
+    ax2.set_ylabel('Temperature')
+    ax2.tick_params(direction='in')
+    
+    fig.legend(bbox_to_anchor=(0.8,0.9))
+    
+    # Title
+    plt.title('Relative Energy Change While Cooling down')
+    
+    # Show
+    fig.tight_layout()
+    plt.savefig(f"Energy_Change_{N}_{sigma:.2g}.pdf", dpi=600)
+    plt.show()
+    
+def GS_average_energy(coordinates, N, sigma):
+    E_0 = 0
+    for i in range(N):
+        for j in range(i + 1, N):
+            E_0 += LJ_potential(sigma, coordinates, i, j)
+    epsilon_0 = E_0 / N
+    return epsilon_0
     
 import time
 
-N = 100
+N = 418
 sigma = (2 ** (1 / 3)) * (3 ** (- 1 / 4)) * (N ** ( - 0.5))
-step_length = 0.03 * sigma
-initial_temperature = 0.4
-cooling_rate = 0.02
+step_length = 0.025 * sigma
+initial_temperature = 0.1
+cooling_rate = 0.05
 
 time1 = time.time()
-coordinates, energy = find_GS(N, sigma, step_length, initial_temperature, cooling_rate)
+coordinates, energy, temp = find_GS(N, sigma, step_length, initial_temperature, cooling_rate)
 time2 = time.time()
 
 print("elapsed time = ", time2 - time1)
     
 plot_GS(coordinates, N, sigma)
-plt.plot(energy)
+plot_energy_change(energy, temp)
+print(GS_average_energy(coordinates, N, sigma))
