@@ -191,7 +191,7 @@ def GS_average_energy(coordinates, N, sigma):
     
 import time
 
-N = 418
+N = 780
 sigma = (2 ** (1 / 3)) * (3 ** (- 1 / 4)) * (N ** ( - 0.5))
 step_length = 0.025 * sigma
 initial_temperature = 0.1
